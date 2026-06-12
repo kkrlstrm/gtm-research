@@ -67,8 +67,27 @@ is mostly cache hits — **≈ $0**. The more you research, the wider the gap.
 - **Cost telemetry (optional).** When a Postgres DSN is set, every run/entity/rung is recorded,
   and `research.v_run_cost_split` tells you whether search credits or model turns were the real
   spend. A verified-rate **watchdog** pauses a run if a provider silently goes dark.
-- **The "do we already know them?" column (optional).** Match each company against your own
-  `known_companies` table — the GTM signal generic tools can't produce.
+
+## Known accounts: public facts, meet your world
+
+Generic enrichment tells you what's **public** about a company. The optional internal
+cross-reference tells you what's **yours** — whether the account is already a customer, a prior
+prospect, or net-new — by matching each company against your own `known_companies` table.
+
+That single `internal_status` column is what connects web research to GTM **execution**:
+
+- don't prospect a company you already serve,
+- route a *prior-prospect-replied* account to the rep who owns it,
+- suppress *do-not-contact* domains before they ever reach a sequencer.
+
+It's a deterministic database join, not an LLM call: you populate `known_companies` from your
+CRM / sending tool, and `bin/known-xref.py` reads it (the company-level analog of
+gtm-pipeline's contact suppression list). With no table configured, every company resolves to
+`net-new` and the research still runs. Setup and the status convention:
+[docs/known-companies.md](docs/known-companies.md).
+
+> Generic tools can tell you what's true on the web. They can't tell you the account is already
+> in your pipeline. That column is the line between a research tool and a GTM tool.
 
 ## Quick start
 
@@ -112,7 +131,7 @@ bin/               the CLIs: research-search, page-digest, research-run, known-x
 config/            research-waterfall.yaml — the ordered cost policy
 storage/postgres/  schema.sql (cache + telemetry) + known-companies-optional.sql (internal xref)
 .claude/           the entity-research workflow + the /research command
-docs/              quickstart, architecture, the-waterfall, local-postgres, integrating-with-gtm-pipeline
+docs/              quickstart · architecture · the-waterfall · known-companies · local-postgres · integrating-with-gtm-pipeline
 ```
 
 ## How it relates to gtm-pipeline
