@@ -40,6 +40,30 @@ Rung order, budgets, and gates live in [`config/research-waterfall.yaml`](config
 key is absent, so a partial key set (even *zero* keys — DuckDuckGo + native fetch need none)
 still gives a working, cheaper waterfall.
 
+## What it actually costs
+
+Worked example: enrich **1,000 companies**, ~3 web operations each (one search + ~two page
+reads) = **3,000 operations**. The waterfall absorbs the bulk on free rungs and pays only on
+the tail that falls through.
+
+| Tier | Share | Ops | Unit | Cost |
+|---|---:|---:|---|---:|
+| **Free** — cache hit · ddg/brave · native fetch · Jina | 88% | 2,640 | $0 | **$0.00** |
+| **Tavily credit** — JS-walled / blocked pages | 11% | 330 | free ≤1k/mo, then ~$0.005 | **$0.00–1.65** |
+| **Parallel** — gated last resort (off unless you enable it) | 1% | 30 | $0.005 | **$0.15** |
+| **Digest** — compress long pages to quoted facts | ~600 pages | — | ~$0.001 | **$0.60** |
+| | | | **cold-run total** | **≈ $0.75 – $2.40** |
+
+Against an **all-premium baseline** (a paid search/enrich API at ~$0.005/call): 3,000 × $0.005
+= **$15.00 / 1,000** — and that's before re-runs. The waterfall is **~6–20× cheaper cold**, and
+because the cache is shared across runs, the **second** pass over an overlapping set of domains
+is mostly cache hits — **≈ $0**. The more you research, the wider the gap.
+
+> These resolution rates are an illustrative model, not a benchmark — your mix depends on how
+> many target sites are static (free) vs. JS-walled (a credit). The point is structural: free
+> rungs carry the body, paid is the long tail, and `research.v_run_cost_split` shows you the
+> real split for *your* corpus after any run.
+
 ## What you get that generic enrichment doesn't
 
 - **Source discipline.** Every field is `value + verified=true + source_url`, or blank +
