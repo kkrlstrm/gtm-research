@@ -1,0 +1,76 @@
+<svg width="100%" viewBox="0 0 680 488" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" role="img" aria-label="Cost waterfall for gtm-research: a search waterfall and a fetch waterfall, each escalating from free rungs to gated paid backups, both wrapped by a shared cache.">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#9a9a94" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <text x="40" y="30" font-size="15" font-weight="500" fill="#6f6e68">The cost waterfall — spend only when free fails</text>
+
+  <rect x="40" y="48" width="600" height="42" rx="8" fill="#F1EFE8" stroke="#B4B2A9" stroke-width="1"/>
+  <text x="340" y="64" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#2C2C2A">Shared cache — checked before every rung</text>
+  <text x="340" y="79" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#5F5E5A">second hit of any URL or query is free · dead URLs never retried</text>
+
+  <line x1="185" y1="90" x2="185" y2="104" stroke="#9a9a94" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="495" y1="90" x2="495" y2="104" stroke="#9a9a94" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <text x="185" y="120" text-anchor="middle" font-size="14" font-weight="500" fill="#6f6e68">Search — find URLs / facts</text>
+  <text x="495" y="120" text-anchor="middle" font-size="14" font-weight="500" fill="#6f6e68">Fetch — read a page</text>
+
+  <!-- SEARCH -->
+  <rect x="40" y="134" width="290" height="46" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+  <text x="185" y="152" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#04342C">Keyword search</text>
+  <text x="185" y="168" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#0F6E56">ddg · brave · claude_cli · serper</text>
+  <line x1="185" y1="182" x2="185" y2="194" stroke="#9a9a94" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="40" y="196" width="290" height="46" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+  <text x="185" y="214" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#04342C">Exa — semantic</text>
+  <text x="185" y="230" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#0F6E56">only when keyword finds nothing</text>
+  <line x1="185" y1="244" x2="185" y2="256" stroke="#9a9a94" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="40" y="258" width="290" height="46" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="1"/>
+  <text x="185" y="276" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#412402">Tavily search</text>
+  <text x="185" y="292" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#854F0B">1 credit · domain filter</text>
+  <line x1="185" y1="306" x2="185" y2="318" stroke="#9a9a94" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="40" y="320" width="290" height="46" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="1.5"/>
+  <text x="185" y="338" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#4A1B0C">Parallel search</text>
+  <text x="185" y="354" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993C1D">gated · last resort</text>
+
+  <!-- FETCH -->
+  <rect x="350" y="134" width="290" height="46" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+  <text x="495" y="152" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#04342C">Native fetch</text>
+  <text x="495" y="168" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#0F6E56">free</text>
+  <line x1="495" y1="182" x2="495" y2="194" stroke="#9a9a94" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="350" y="196" width="290" height="46" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+  <text x="495" y="214" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#04342C">Jina reader</text>
+  <text x="495" y="230" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#0F6E56">free · renders JS shells</text>
+  <line x1="495" y1="244" x2="495" y2="256" stroke="#9a9a94" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="350" y="258" width="290" height="46" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="1"/>
+  <text x="495" y="276" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#412402">Tavily Extract</text>
+  <text x="495" y="292" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#854F0B">1 credit</text>
+  <line x1="495" y1="306" x2="495" y2="318" stroke="#9a9a94" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="350" y="320" width="290" height="46" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="1.5"/>
+  <text x="495" y="338" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#4A1B0C">Parallel extract</text>
+  <text x="495" y="354" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#993C1D">gated · last resort</text>
+  <line x1="495" y1="368" x2="495" y2="380" stroke="#9a9a94" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="350" y="382" width="290" height="46" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+  <text x="495" y="400" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#26215C">Compress &gt;8K</text>
+  <text x="495" y="416" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#3C3489">quoted facts · cheap model</text>
+
+  <!-- legend -->
+  <rect x="40" y="440" width="14" height="14" rx="3" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+  <text x="60" y="451" font-size="12" fill="#808079">free</text>
+  <rect x="120" y="440" width="14" height="14" rx="3" fill="#FAEEDA" stroke="#BA7517" stroke-width="1"/>
+  <text x="140" y="451" font-size="12" fill="#808079">credit</text>
+  <rect x="210" y="440" width="14" height="14" rx="3" fill="#FAECE7" stroke="#993C1D" stroke-width="1"/>
+  <text x="230" y="451" font-size="12" fill="#808079">gated paid</text>
+  <rect x="320" y="440" width="14" height="14" rx="3" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+  <text x="340" y="451" font-size="12" fill="#808079">compress</text>
+
+  <text x="40" y="474" font-size="12" fill="#808079">Each rung runs only when the one above it fails or returns empty.</text>
+</svg>

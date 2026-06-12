@@ -22,18 +22,11 @@ Web research costs money (search credits are a capped resource). So every step t
 **cheapest rung first** and only escalates on failure — and a shared cache means the second
 run of any URL or query is free.
 
-**Reading a page** (`bin/page-digest.py`):
-```
-cache → native fetch (free) → Jina r.jina.ai (free) on a JS-shell → Tavily Extract (1 credit)
-      → Parallel (gated) → [compress >8K-char pages to quoted facts via OpenRouter]
-```
-Dead URLs (404/410/401) hard-stop and are negative-cached — never retried.
+![Two cost waterfalls — search and fetch — each escalating from free rungs (shared cache, DuckDuckGo/Brave/Serper, native fetch, Jina) up to gated paid backups (Tavily credits, then Parallel), both wrapped by one shared cache that is checked before any rung.](docs/assets/cost-waterfall.svg)
 
-**Searching** (`bin/research-search.py`):
-```
-cache → keyword (free: ddg → brave → claude_cli → serper) → Exa (free, semantic discovery)
-      → Tavily search (1 credit) → Parallel (gated)
-```
+Dead URLs (404/410/401) hard-stop and are negative-cached — never retried. Long pages are
+compressed to quoted facts by a cheap model before they reach your research agent. The full
+rung-by-rung tables are in [docs/the-waterfall.md](docs/the-waterfall.md).
 
 Rung order, budgets, and gates live in [`config/research-waterfall.yaml`](config/research-waterfall.yaml)
 — **add or reorder a rung by editing config, not code.** Every rung auto-skips when its API
