@@ -1,0 +1,16 @@
+{
+  "entities": [
+    { "name": "Stripe", "domain": "stripe.com" },
+    { "name": "Ramp", "domain": "ramp.com" },
+    { "name": "Mercury", "domain": "mercury.com" }
+  ],
+  "brief": "Find the company's HQ city, an approximate employee count, and the founder/CEO.",
+  "fields": ["hq_city", "employee_count", "ceo"],
+  "purpose": "Going into a sales CSV — accuracy matters.",
+  "entityType": "company",
+  "crossReference": true,
+  "maxFetches": 6,
+  "maxSearches": 4,
+  "model": "sonnet",
+  "verify": true
+}

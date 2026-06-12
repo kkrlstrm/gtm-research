@@ -1,0 +1,141 @@
+# research-waterfall.yaml
+# The ordered cost policy for the research engine.
+# The two chokepoints read this, run rungs top-to-bottom per waterfall, stop at the
+# first success, and record every attempt to research.rung_event. Reordering or adding
+# a rung is a config change here — not a code change.
+#
+#   search → bin/research-search.py     fetch → bin/page-digest.py
+# research_engine/waterfall.py parses this file and evaluates `invoke_when`.
+
+version: 1
+
+defaults:
+  stop_on: first_success        # escalate only when the current rung fails or returns empty
+  record_telemetry: true        # write rung_event + entity_telemetry rows when a DB is configured
+  trust_only_verified: true     # verified==true is the only trusted field
+
+# ---- cache: wraps BOTH waterfalls. Checked before any rung, written after success. ----
+cache:
+  enabled: true
+  scope: shared                 # web facts are client-agnostic — one cache across all runs
+  schema: research
+  page_table: page_cache
+  search_table: search_cache
+  default_ttl_days: 30
+  dead_url_ttl_days: 90         # negative-cache 404/410/401 — never re-fetch within window
+  check_before_every_rung: true
+  write_after_success: true
+  dedupe_by_domain: true        # resolve firmographics once per domain, before per-person fan-out
+
+# ---- budgets: recurring free pools (tracked against research.v_free_pool_month) ----
+budgets:
+  brave:    { monthly_free: 2000, track: true }
+  serper:   { monthly_free: 2500, track: true }
+  exa:      { monthly_free: 1000, track: true }
+  jina:     { monthly_free: null, track: true }                 # token-metered free tier; track calls
+  tavily:   { monthly_free: 1000, track: true }                 # credits
+  parallel: { monthly_free: null, one_time_free: 18000, track: true }  # one-time — treat as a reserve
+
+# ---- gates: reserve web-connected paid backups for explicit clearance ----
+gates:
+  parallel:
+    requires: explicit_clearance
+    clearance_satisfied_by: [user_invocation, "run.args.allow_parallel == true"]
+    note: Parallel Search/Extract ONLY — pass --allow-parallel to clear it.
+
+# ---- watchdog: pause a run if verified-rate collapses (silent provider outage) ----
+watchdog:
+  metric: verified_rate
+  source_view: research.v_run_verified_rate
+  window_entities: 25
+  min_verified_rate: 0.55
+  action: pause
+  covers_all_rungs: true
+
+# ============================ SEARCH — find URLs / facts ============================
+search_waterfall:
+  - rung: keyword
+    tier: free
+    impl: bin/research-search.py                  # chokepoint; wraps ddg -> brave -> claude_cli -> serper
+    invoke_when: always
+    watched: true
+    cost: { unit: usd, amount: 0 }
+
+  - rung: exa
+    tier: free
+    impl: providers/exa_search.py
+    invoke_when: "prev_rungs_empty and query.intent == 'semantic'"  # discovery only — NOT keyword dupes
+    env: [EXA_API_KEY]
+    watched: true
+    cost: { unit: usd, amount: 0 }
+
+  - rung: tavily
+    tier: credit
+    impl: research_engine/web.py                    # web.search(...)
+    invoke_when: prev_rungs_empty
+    env: [TAVILY_API_KEY]
+    watched: true
+    cost: { unit: tavily_credit, amount: 1 }
+
+  - rung: parallel
+    tier: gated
+    impl: providers/parallel_search.py
+    invoke_when: prev_rungs_empty
+    gate: parallel
+    env: [PARALLEL_API_KEY]
+    watched: true
+    cost: { unit: usd, amount: 0.005 }
+
+# ============================ FETCH — read a page ============================
+fetch_waterfall:
+  - rung: native
+    tier: free
+    impl: research_engine/web.py                    # free native fetch
+    invoke_when: always
+    watched: true
+    cost: { unit: usd, amount: 0 }
+
+  - rung: jina
+    tier: free
+    impl: providers/jina_reader.py                  # r.jina.ai/<url> — renders JS server-side
+    invoke_when: "prev_rung_failed or prev.is_js_shell"
+    env: [JINA_API_KEY]                             # optional; key lifts 20rpm -> 500rpm
+    watched: true
+    cost: { unit: usd, amount: 0 }
+
+  - rung: tavily
+    tier: credit
+    impl: research_engine/web.py                    # web._tavily_extract — hard-stops 404/410/401
+    invoke_when: prev_rung_failed
+    env: [TAVILY_API_KEY]
+    watched: true
+    cost: { unit: tavily_credit, amount: 1 }
+
+  - rung: parallel
+    tier: gated
+    impl: providers/parallel_extract.py
+    invoke_when: prev_rung_failed
+    gate: parallel
+    env: [PARALLEL_API_KEY]
+    watched: true
+    cost: { unit: usd, amount: 0.005 }
+
+# digest is a POST-PROCESS on whatever fetch returns — NOT an escalation rung
+fetch_compression:
+  rung: digest
+  tier: cheap_model
+  impl: openrouter                                # model from RESEARCH_DIGEST_MODEL (default deepseek/deepseek-chat)
+  invoke_when: "fetched_chars > 8000"
+  else: return_verbatim                           # short pages pass through, no model spend
+  env: [OPENROUTER_API_KEY]
+  cost: { unit: usd, amount: 0.002 }              # nominal; page-digest records the actual OpenRouter cost
+
+# ---- what never leaves the orchestrator (your Claude agent) ----
+non_delegable:
+  - decide_what_to_fetch
+  - verify_claim_against_source
+
+internal_xref:
+  impl: bin/known-xref.py
+  deterministic: true                             # optional research.known_companies join, not an LLM call
+  applies_to: company

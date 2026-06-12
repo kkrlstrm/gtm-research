@@ -1,0 +1,35 @@
+# ── research.config.yaml — the wiring file ───────────────────────────────────
+# Copy to `research.config.yaml` and edit. This references env-var NAMES, never
+# secret values (those live in .env). The detailed rung policy lives separately in
+# config/research-waterfall.yaml; this file is the high-level wiring.
+
+version: 1
+
+# ── Telemetry + cache storage (OPTIONAL) ─────────────────────────────────────
+# none     = run with no database; no cross-run cache, no cost telemetry (zero setup).
+# postgres = a Postgres DSN — LOCAL (postgresql://localhost/gtm_research) or hosted
+#            (Neon/RDS/Supabase). Apply storage/postgres/schema.sql once.
+storage:
+  backend: postgres                # none | postgres
+  postgres:
+    url_env: RESEARCH_DATABASE_URL # env var holding the DSN; falls back to DATABASE_URL
+    enable_known_companies: false  # opt-in internal xref (known-companies-optional.sql)
+
+# ── The cost waterfall ───────────────────────────────────────────────────────
+# The ordered rung policy (search + fetch), budgets, gates, and watchdog.
+waterfall: config/research-waterfall.yaml
+
+# ── Models ───────────────────────────────────────────────────────────────────
+# The research LOOP and the VERIFY stay with your orchestrator (Claude Code).
+# A cheap model only compresses already-fetched long pages (page-digest).
+models:
+  research: sonnet                 # sonnet | opus | haiku — your Claude Code subagents
+  verify: sonnet
+  digest_model_env: RESEARCH_DIGEST_MODEL   # OpenRouter id; default deepseek/deepseek-chat
+
+# ── Per-entity budget (in-prompt guidance to the fan-out) ────────────────────
+defaults:
+  max_fetches: 6
+  max_searches: 4
+  cross_reference: true            # run bin/known-xref.py for companies (net-new if no table)
+  watchdog: true                   # pause a run when the trailing verified-rate collapses

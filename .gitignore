@@ -1,0 +1,22 @@
+# ── Secrets — never commit ───────────────────────────────────────────────────
+.env
+.env.local
+*.env
+!.env.example
+
+# Adopter's resolved config may be kept local; the repo ships only the example
+# (uncomment to keep your wiring private)
+# research.config.yaml
+
+# ── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# ── OS / editor cruft ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
