@@ -23,8 +23,10 @@ export const meta = {
 //   verify     : (optional bool, default true)
 //   maxFetches : (optional int, default 6)   per-entity page-fetch budget (in-prompt)
 //   maxSearches: (optional int, default 4)   per-entity search budget (in-prompt)
-//   model      : (optional) 'sonnet' (DEFAULT) | 'opus' | 'haiku' | 'inherit'
-//   verifyModel: (optional) defaults to `model`
+//   model      : (optional) 'sonnet' (DEFAULT) | 'opus' | 'haiku' | 'inherit'  — research agent
+//   verifyModel: (optional) 'haiku' (DEFAULT) — verify is constrained re-checking; raise if needed
+//   verifySpotCheckModel / verifySpotCheckEvery : (optional) route every Nth verify to a
+//                stronger model (e.g. 'sonnet', every 20) to audit the cheap verify pass
 //   allowParallel : (optional bool) clear the gated Parallel rung for this run
 // ---------------------------------------------------------------------------
 
@@ -57,7 +59,14 @@ const maxFetches  = Number.isFinite(+A.maxFetches)  ? +A.maxFetches  : 6
 const maxSearches = Number.isFinite(+A.maxSearches) ? +A.maxSearches : 4
 const allowParallel = !!A.allowParallel
 const researchModel = A.model || A.researchModel || 'sonnet'
-const verifyModel   = A.verifyModel || researchModel || 'sonnet'
+// Verify is constrained re-checking (re-open source_url, confirm/blank fields) — a cheap
+// model handles it well, so it defaults to haiku. Raise it per-run with verifyModel.
+const verifyModel   = A.verifyModel || 'haiku'
+// Optional spot-check: route every Nth verify to a stronger model to keep the cheap pass
+// honest. Off unless both are set. Deterministic by count (no RNG — unavailable here).
+const verifySpotModel = A.verifySpotCheckModel || ''
+const verifySpotEvery = Number.isFinite(+A.verifySpotCheckEvery) && +A.verifySpotCheckEvery > 0 ? +A.verifySpotCheckEvery : 0
+let _verifyN = 0
 function modelOpt(m) { return m && m !== 'inherit' ? { model: m } : {} }
 
 // Run all commands from the repo root (override with GTM_RESEARCH_ROOT).
@@ -187,7 +196,7 @@ function verifyPrompt(res) {
   ].filter(Boolean).join('\n')
 }
 
-log(`entity-research: ${entities.length} ${entityType}${entities.length === 1 ? '' : 's'} · fields: ${fields.join(', ')} · crossRef: ${crossRef} · verify: ${doVerify} · budget: ${maxFetches} fetch/${maxSearches} search · model: ${researchModel}`)
+log(`entity-research: ${entities.length} ${entityType}${entities.length === 1 ? '' : 's'} · fields: ${fields.join(', ')} · crossRef: ${crossRef} · verify: ${doVerify} (${verifyModel}${verifySpotModel && verifySpotEvery ? `, spot ${verifySpotModel} every ${verifySpotEvery}` : ''}) · budget: ${maxFetches} fetch/${maxSearches} search · research: ${researchModel}`)
 
 // ---- Setup: open the telemetry run row (best-effort; shell-less orchestrator uses an agent) ----
 {
@@ -215,14 +224,17 @@ function sharedContext(res) {
   if (!v.length) return ''
   return `\nALREADY VERIFIED for this company (reuse these company-level fields and re-cite their source_url; only research what is still missing or person-specific):\n${JSON.stringify(v, null, 2)}`
 }
-// Verify seam: today Claude does both research and verify. This is the ONE call to swap ~95%
-// of verifies to a cheap model later while keeping ~5% on Claude as a spot-check.
+// Verify seam: research runs on `researchModel` (sonnet by default), verify runs cheap
+// (`verifyModel`, haiku by default). An optional spot-check re-routes every Nth verify to a
+// stronger model so the cheap pass stays honest.
 async function verifyEntity(res) {
   if (!res) return null
   if (!doVerify) return res
+  const spot = verifySpotModel && verifySpotEvery && (++_verifyN % verifySpotEvery === 0)
+  const m = spot ? verifySpotModel : verifyModel
   return agent(verifyPrompt(res), {
-    label: `verify:${(res.entity || '').slice(0, 40)}`, phase: 'Verify',
-    schema: RESULT_SCHEMA, ...modelOpt(verifyModel),
+    label: `verify${spot ? '*' : ''}:${(res.entity || '').slice(0, 40)}`, phase: 'Verify',
+    schema: RESULT_SCHEMA, ...modelOpt(m),
   })
 }
 async function researchEntity(e, shared) {

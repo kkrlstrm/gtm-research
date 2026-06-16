@@ -1,0 +1,15 @@
+# Isolated venv for the optional browser-use last-resort fetch rung.
+# Heavy deps (Playwright/Chromium) live HERE, never in the engine's environment.
+#
+#   python3 -m venv .venv && . .venv/bin/activate
+#   pip install -r requirements.txt
+#   python -m playwright install chromium
+#
+# browser-use's import surface shifts between releases — pin a known-good version and
+# verify `from browser_use import Agent` / `from browser_use.llm import ChatOpenAI`
+# match it (adjust fetch.py if not). Verified against browser-use 0.13.1.
+browser-use[core]
+# browser-use 0.13 uses a CDP backend and does NOT pull playwright automatically, but it
+# still needs a Chromium binary — its own installer runs `playwright install chromium`.
+# So we install playwright here and run `python -m playwright install chromium` after.
+playwright

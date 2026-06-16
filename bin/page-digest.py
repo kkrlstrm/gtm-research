@@ -6,7 +6,8 @@ Reads config/research-waterfall.yaml and walks the fetch rungs in order, checkin
 shared cache before any network call and writing telemetry as it goes:
 
     cache → native (free) → jina (free, on JS-shell/bot-wall) → tavily extract (1 credit)
-          → parallel extract (gated) → [post-process] digest if >8000 chars
+          → parallel extract (gated) → browser_use (gated, local browser, no proxies)
+          → [post-process] digest if >8000 chars
 
 Rungs change by editing the YAML, not this file. native + tavily rung_events are written
 here (the chokepoint owns paid-rung telemetry); jina + parallel write their own. A
@@ -41,7 +42,7 @@ REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 from research_engine import web, research_db, waterfall  # noqa: E402
 from research_engine.env import env  # noqa: E402
-from providers import jina_reader, parallel_extract  # noqa: E402
+from providers import jina_reader, parallel_extract, browser_use_fetch  # noqa: E402
 
 DIGEST_THRESHOLD = int(os.environ.get("PAGE_DIGEST_THRESHOLD", "8000"))
 DIGEST_MODEL = env("RESEARCH_DIGEST_MODEL") or "deepseek/deepseek-chat"
@@ -54,7 +55,7 @@ def _emit(run_id, entity, rung, tier, ok, **kw):
 
 
 def _fetch(target: str, *, run_id: str | None = None, entity: str | None = None,
-           allow_parallel: bool = False) -> dict:
+           allow_parallel: bool = False, allow_browser_use: bool = False) -> dict:
     if not target.startswith(("http://", "https://")):
         p = Path(target)
         if p.exists():
@@ -74,7 +75,11 @@ def _fetch(target: str, *, run_id: str | None = None, entity: str | None = None,
         return {"ok": bool(body), "content": body, "source": target, "tier": "cache", "tavily_credits": 0,
                 "from_cache": True, "error": None, "status": cached["http_status"]}
 
-    run_args = {"allow_parallel": True} if allow_parallel else {}
+    run_args = {}
+    if allow_parallel:
+        run_args["allow_parallel"] = True
+    if allow_browser_use:
+        run_args["allow_browser_use"] = True
     prev_failed = False
     is_js_shell = False
     native_content = ""
@@ -139,6 +144,14 @@ def _fetch(target: str, *, run_id: str | None = None, entity: str | None = None,
                         "tavily_credits": 0, "from_cache": False, "error": None, "status": 200}
             prev_failed = True
 
+        elif name == "browser_use":
+            bu = browser_use_fetch.read(target, run_id=run_id, entity=entity)
+            if bu["ok"]:
+                research_db.cache_put_page(target, 200, "browser_use", raw_excerpt=bu["content"][:_RAW_EXCERPT_MAX])
+                return {"ok": True, "content": bu["content"], "source": target, "tier": "browser_use",
+                        "tavily_credits": 0, "from_cache": False, "error": None, "status": 200}
+            prev_failed = True
+
     if native_content.strip():
         return {"ok": True, "content": native_content, "source": target, "tier": "native-thin",
                 "tavily_credits": 0, "from_cache": False,
@@ -191,11 +204,14 @@ def main() -> int:
     ap.add_argument("--threshold", type=int, default=DIGEST_THRESHOLD)
     ap.add_argument("--run-id", dest="run_id", default=None)
     ap.add_argument("--allow-parallel", action="store_true")
+    ap.add_argument("--allow-browser-use", dest="allow_browser_use", action="store_true",
+                    help="clear the gated local browser-use rung (needs BROWSER_USE_CMD)")
     ap.add_argument("--no-digest", action="store_true", help="never delegate; return raw page")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
 
-    f = _fetch(a.target, run_id=a.run_id, entity=a.entity, allow_parallel=a.allow_parallel)
+    f = _fetch(a.target, run_id=a.run_id, entity=a.entity, allow_parallel=a.allow_parallel,
+               allow_browser_use=a.allow_browser_use)
     print(f"[page-digest] {f['source']} → tier={f['tier']} credits={f['tavily_credits']} "
           f"cache={f['from_cache']} chars={len(f['content'])}", file=sys.stderr)
     if not f["ok"] and not f["content"]:

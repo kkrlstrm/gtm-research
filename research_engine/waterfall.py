@@ -102,13 +102,10 @@ def should_invoke(rung: dict, ctx: dict) -> bool:
 
 
 def gate_satisfied(rung: dict, run_args: dict | None) -> bool:
-    """A gated rung fires only with clearance (user invocation or run.args.allow_<gate>)."""
+    """A gated rung fires only with clearance for THAT gate (run.args.allow_<gate>).
+    Gates are independent: clearing `parallel` must not open `browser_use` or vice versa."""
     gate = rung.get("gate")
     if not gate:
         return True
     run_args = run_args or {}
-    if run_args.get("allow_parallel") is True or run_args.get(f"allow_{gate}") is True:
-        return True
-    if run_args.get("user_invocation"):
-        return True
-    return False
+    return run_args.get(f"allow_{gate}") is True

@@ -36,12 +36,16 @@ budgets:
   tavily:   { monthly_free: 1000, track: true }                 # credits
   parallel: { monthly_free: null, one_time_free: 18000, track: true }  # one-time — treat as a reserve
 
-# ---- gates: reserve web-connected paid backups for explicit clearance ----
+# ---- gates: reserve expensive/heavy backups for explicit clearance ----
 gates:
   parallel:
     requires: explicit_clearance
     clearance_satisfied_by: [user_invocation, "run.args.allow_parallel == true"]
     note: Parallel Search/Extract ONLY — pass --allow-parallel to clear it.
+  browser_use:
+    requires: explicit_clearance
+    clearance_satisfied_by: ["run.args.allow_browser_use == true"]
+    note: Local browser-use fetch (slow, no proxies) — pass --allow-browser-use to clear it.
 
 # ---- watchdog: pause a run if verified-rate collapses (silent provider outage) ----
 watchdog:
@@ -119,6 +123,15 @@ fetch_waterfall:
     env: [PARALLEL_API_KEY]
     watched: true
     cost: { unit: usd, amount: 0.005 }
+
+  - rung: browser_use
+    tier: gated
+    impl: providers/browser_use_fetch.py            # local browser (browser-use) — no proxies; runner in its own venv
+    invoke_when: prev_rung_failed
+    gate: browser_use                               # only fires with --allow-browser-use
+    env: [BROWSER_USE_CMD]                          # absent -> auto-skips
+    watched: true
+    cost: { unit: usd, amount: 0.02 }               # nominal; wrapper records the runner's actual model cost
 
 # digest is a POST-PROCESS on whatever fetch returns — NOT an escalation rung
 fetch_compression:

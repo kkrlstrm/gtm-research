@@ -95,3 +95,7 @@ Both optional, both plain Postgres (local or hosted):
   "just run," never an error.
 - **Verification enums.** Every output field is verified+sourced, blank+"NOT FOUND", or a
   labeled `UNVERIFIED` guess. Never invented.
+
+See [`cost-model.md`](cost-model.md) for where money actually goes (deterministic waterfall = $0;
+metered = Tavily/Parallel + digest; Claude agents = flat-rate on the subscription / metered on the
+API) and the model-routing table (Opus orchestrator · Sonnet research · Haiku verify).

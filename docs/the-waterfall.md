@@ -25,10 +25,19 @@ The policy lives in [`config/research-waterfall.yaml`](../config/research-waterf
 | 2 | `jina` (r.jina.ai) | $0 | native body is a JS-shell / failed |
 | 3 | `tavily` extract | 1 credit | native + jina failed |
 | 4 | `parallel` extract | ~$0.005 | failed **and** `--allow-parallel` (gated) |
+| 5 | `browser_use` | ~cheap-model tokens | failed **and** `--allow-browser-use` (gated, optional) |
 | — | `digest` (post-process) | ~$0.002 | fetched page > 8000 chars — compress to quoted facts |
 
 `digest` is **not** an escalation rung — it compresses whatever a fetch rung returned, only
 when the page is long. A 404/410/401 hard-stops the fetch waterfall and is negative-cached.
+
+Rung 5, `browser_use`, is an **optional, off-by-default** last resort: a real local browser
+([browser-use](https://github.com/browser-use/browser-use)) that loads hard Cloudflare/JS
+pages on your own IP with **no residential proxies**. Its heavy deps live in a separate venv
+(`agents/browser-use-fetch/`) and are reached over a subprocess boundary, so the engine stays
+dependency-light. It fires only when `BROWSER_USE_CMD` is set **and** the gate is cleared with
+`--allow-browser-use`; otherwise it auto-skips. Tavily already handles most bot-walls for ~1
+credit — this is the long tail.
 
 ## The `invoke_when` grammar
 
