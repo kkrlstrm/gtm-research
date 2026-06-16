@@ -27,7 +27,8 @@ export const meta = {
 //   verifyModel: (optional) 'haiku' (DEFAULT) — verify is constrained re-checking; raise if needed
 //   verifySpotCheckModel / verifySpotCheckEvery : (optional) route every Nth verify to a
 //                stronger model (e.g. 'sonnet', every 20) to audit the cheap verify pass
-//   allowParallel : (optional bool) clear the gated Parallel rung for this run
+//   allowParallel   : (optional bool) clear the gated Parallel rung for this run
+//   allowBrowserUse : (optional bool) clear the gated browser-use rung (needs BROWSER_USE_CMD set)
 // ---------------------------------------------------------------------------
 
 function resolveArgs(a) {
@@ -58,6 +59,10 @@ const crossRef  = A.crossReference !== undefined ? !!A.crossReference : (entityT
 const maxFetches  = Number.isFinite(+A.maxFetches)  ? +A.maxFetches  : 6
 const maxSearches = Number.isFinite(+A.maxSearches) ? +A.maxSearches : 4
 const allowParallel = !!A.allowParallel
+const allowBrowserUse = !!A.allowBrowserUse
+// Gate flags threaded into every page-digest call so the gated rungs (parallel,
+// browser_use) can actually fire in a run when explicitly cleared. Off by default.
+const ALLOW_FLAGS = `${allowParallel ? ' --allow-parallel' : ''}${allowBrowserUse ? ' --allow-browser-use' : ''}`
 const researchModel = A.model || A.researchModel || 'sonnet'
 // Verify is constrained re-checking (re-open source_url, confirm/blank fields) — a cheap
 // model handles it well, so it defaults to haiku. Raise it per-run with verifyModel.
@@ -124,7 +129,7 @@ function fetchInstructions(e) {
     `   lookups. Add \`--domains a.com,b.com\` to restrict. Only if it returns no results may`,
     `   you fall back to a native WebSearch tool.`,
     `2. READ A PAGE (cost-aware waterfall + auto-digest + cache):`,
-    `   \`python3 ${REPO_ROOT}/bin/page-digest.py "<url>" --entity ${JSON.stringify(e.label)} --want "${want}"${RUN_ID ? ` --run-id ${RUN_ID}` : ''}\``,
+    `   \`python3 ${REPO_ROOT}/bin/page-digest.py "<url>" --entity ${JSON.stringify(e.label)} --want "${want}"${RUN_ID ? ` --run-id ${RUN_ID}` : ''}${ALLOW_FLAGS}\``,
     `   Free native fetch → Jina (free) on a JS-shell → a Tavily credit only if both fail; long`,
     `   pages auto-compress to quoted facts. It HARD-STOPS dead URLs (404/410/401) and`,
     `   negative-caches them — if it reports a dead URL, do NOT retry: re-search or corroborate.`,
@@ -186,7 +191,7 @@ function verifyPrompt(res) {
     `\nFindings to check:\n${JSON.stringify(res.findings, null, 2)}`,
     `\nFor each finding: open its source_url and confirm the source actually supports the stated fields.`,
     `To open a source_url, run from ${REPO_ROOT}:`,
-    `\`python3 ${REPO_ROOT}/bin/page-digest.py "<source_url>" --no-digest --entity ${JSON.stringify(res.entity)} --want "${brief}"${RUN_ID ? ` --run-id ${RUN_ID}` : ''}\``,
+    `\`python3 ${REPO_ROOT}/bin/page-digest.py "<source_url>" --no-digest --entity ${JSON.stringify(res.entity)} --want "${brief}"${RUN_ID ? ` --run-id ${RUN_ID}` : ''}${ALLOW_FLAGS}\``,
     `— it reads through the cached free-first waterfall (a cache hit / native fetch costs nothing).`,
     `- If the source confirms a field, keep the value and set verified=true.`,
     `- If the source does NOT support a field, blank that field, set verified=false, explain in note.`,
