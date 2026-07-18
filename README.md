@@ -1,5 +1,8 @@
 # gtm-research
 
+<!-- portfolio-status -->
+**Status:** Reference implementation — extracted from a private production GTM system; tenant data, provider adapters, and company-specific policy stay private. · **Layer:** Intelligence · **[Portfolio map ›](https://github.com/kkrlstrm)**
+
 ## A cost-optimized web-research engine for GTM enrichment — free-first, cached, source-verified.
 
 Give it a company or person (or a list) and the fields you want, and it returns
@@ -146,3 +149,15 @@ own for ad-hoc account research, or drop it in as a cached `web_research` upgrad
 [Apache 2.0](LICENSE). BYOK, local-env-only: secrets are read from your environment and sent
 only to each provider's own API — this engine never fetches a key over the network. See
 [SECURITY.md](SECURITY.md).
+
+---
+
+<!-- portfolio-footer -->
+## Where this fits
+
+Part of a portfolio of **governed, AI-native GTM systems** — reference implementations and reusable patterns extracted from a private production stack. In that system this is the source-verified web-research engine that feeds targeting.
+
+**Full portfolio map → [github.com/kkrlstrm](https://github.com/kkrlstrm)**
+
+Works with:
+- [gtm-pipeline](https://github.com/kkrlstrm/gtm-pipeline) — drops in as its cached research capability
