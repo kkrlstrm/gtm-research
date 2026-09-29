@@ -1,7 +1,7 @@
 # gtm-research
 
 <!-- portfolio-status -->
-**Status:** Reference implementation — extracted from a private production GTM system; tenant data, provider adapters, and company-specific policy stay private. · **Layer:** Intelligence · **[Portfolio map ›](https://github.com/kkrlstrm)**
+**Status:** Reference implementation — extracted from a private internal GTM platform in production use; tenant data, provider adapters, and company-specific policy stay private. · **Layer:** Workload: research · **[Portfolio map ›](https://github.com/kkrlstrm)**
 
 ## A cost-optimized web-research engine for GTM enrichment — free-first, cached, source-verified.
 
